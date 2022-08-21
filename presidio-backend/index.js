@@ -3,13 +3,14 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const mongoose = require("mongoose");
-const UserSchema = require("./models/user.model");
+const UserModel = require("./models/user.model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const VaccinationCentreSchema = require("./models/centres.model");
+const VaccinationCentreModel = require("./models/centres.model");
 const { db } = require("./models/user.model");
 const { response } = require("express");
 const AppointmentModel = require("./models/appointments.model");
+const dayjs = require("dayjs");
 
 app.use(cors());
 app.use(express.json());
@@ -42,7 +43,7 @@ app.get("/api/check", async (req, res) => {
 app.post("/api/register", async (req, res) => {
   console.log(req.body);
   try {
-    const user = await UserSchema.create({
+    const user = await UserModel.create({
       name: req.body.name,
       email: req.body.email,
       password: await hashPassword(req.body.password),
@@ -59,7 +60,7 @@ async function hashPassword(password) {
 
 // Login Page Backend
 app.post("/api/login", async (req, res) => {
-  const user = await UserSchema.findOne({
+  const user = await UserModel.findOne({
     email: req.body.email,
   });
 
@@ -72,7 +73,7 @@ app.post("/api/login", async (req, res) => {
         },
         "secret123"
       );
-      return res.json({ status: "ok", user: true });
+      return res.json({ status: "ok", user: token });
     } else {
       return res.json({ status: "error", user: false });
     }
@@ -88,9 +89,10 @@ async function comparePassword(password, hash) {
 // Add Vaccination center
 app.post("/api/addCenter", async (req, res) => {
   try {
-    const center = await VaccinationCentreSchema.create({
+    const center = await VaccinationCentreModel.create({
       name: req.body.name,
       address: req.body.address,
+      doses: req.body.doses,
     });
     res.json({ status: "ok" });
   } catch (err) {
@@ -101,70 +103,73 @@ app.post("/api/addCenter", async (req, res) => {
 // Delete Vaccination Center
 app.post("/api/delete", async (req, res) => {
   //console.log("hello");
-  const vcenter = await VaccinationCentreSchema.findOne({
+  const vcenter = await VaccinationCentreModel.findOne({
     id: req.body.id,
   });
   //console.log(req.body);
-  const result = await VaccinationCentreSchema.deleteOne({ _id: req.body.id });
+  const result = await VaccinationCentreModel.deleteOne({ _id: req.body.id });
   //console.log(result);
   res.send(result);
 });
 
 // get mongodb data on the frontend.
 app.get("/api/list", async (req, res) => {
-  const users = await VaccinationCentreSchema.find({});
-try {
+  const users = await VaccinationCentreModel.find({});
+  try {
     res.send(users);
   } catch (error) {
     res.status(500).send(error);
   }
 });
 
+// admin login page
 
- // admin login page 
-
- app.post("/api/adminlogin", async (req,res) => {
-  const detail = await ({
-        email :  req.body.email,
-        password : req.body.password
-  })
-      if(detail.email=== "admin@gmail.com" && detail.password==="admin123")
-      {
-        return res.json({ status: "ok", user: true });
-      }
-      else 
-        return res.json({ status: "error", user: false });
- })
-
-
-
- // user search bar
- app.get("/api/search", async (req, res) => {
-  const users = await VaccinationCentreSchema.find({});
-try {
-    res.send(users);
-  } catch (error) {
-    res.status(500).send(error);
-  }
+app.post("/api/adminlogin", async (req, res) => {
+  const detail = await {
+    email: req.body.email,
+    password: req.body.password,
+  };
+  if (detail.email === "admin@gmail.com" && detail.password === "admin123") {
+    return res.json({ status: "ok", user: true });
+  } else return res.json({ status: "error", user: false });
 });
 
+// This is function to check and update appoint
 
-app.post("/api/appointment", async(req,res) =>{
+app.post("/api/appointment", async (req, res) => {
+  // const check = await VaccinationCentreModel.findOne({
+  //   doses: req.body.doses
+  // });
+  // check.doses = check.doses - 1
+  // const appointment= await AppointmentModel.create({
+  //   name: name.req.body,
+  //   AadharID:AadharID.req.body,
+  //   });
 
-  const booking = await AppointmentModel.create({
-    name : req.body.name,
-    date : req.body.date
+  // get all appointments for requested date using cid
+  const datetimestring = req.body.datetime;
+  const cid = req.body.cid;
+  const name = req.body.name;
+
+  const startTime = dayjs(datetimestring).startOf("day");
+  const endTime = dayjs(datetimestring).endOf("day");
+
+  const bookedAppointments = await AppointmentModel.find({
+    cid: new mongoose.Types.ObjectId(cid),
+    datetime: { $gte: startTime.toISOString(), $lte: endTime.toISOString() },
   });
-       
-  })
-
-
-
-
-
-
-
-
+  if (bookedAppointments.length < 10) {
+    await AppointmentModel.create({
+      cid,
+      datetime: dayjs(datetimestring).toISOString(),
+      name,
+    });
+    res.json({ status: "ok" });
+  } else {
+    // throw error
+    res.json({ status: "error", message: "Not slots available for today" });
+  }
+});
 
 app.listen(1337, () => {
   console.log("Server started on 1337");

@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const VaccinationCentreSchema = new mongoose.Schema({
     name : {type: String, required:true},
     address: {type: String, required: true},
+    doses: {type: Number, required: true},
 },
     {collection: 'centres'}
 )
