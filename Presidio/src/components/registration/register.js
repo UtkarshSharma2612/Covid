@@ -17,14 +17,6 @@ function App() {
       email,
       password,
     });
-
-    // catch(err){
-    //     console.log(err);
-    //     // return response.status(500).json({
-    //     //     success: 0,
-    //     //     message: "Error MEssage"
-    // }
-
     const data = response.data;
     console.log(data);
     navigate("/login");

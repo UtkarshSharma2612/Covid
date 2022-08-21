@@ -10,6 +10,7 @@ const Admin = () => {
     const [open, setOpen] = useState(false);
     const [name, setName] = useState("");
     const [address, setAddress] = useState("");
+    const [doses, setDoses] = useState("")
     const [dataDB, setData] = useState([]);
 
     async function handleSubmit(event) {
@@ -18,7 +19,8 @@ const Admin = () => {
 
     const response = axios.post("http://localhost:1337/api/addCenter", {
           name,
-          address
+          address,
+          doses,
         });
         const data = response.data;
         console.log(data);
@@ -30,7 +32,7 @@ const Admin = () => {
 
     useEffect(() => {
         getData({})
-    },[]); 
+    },[dataDB]); 
 
     const getData= async ()=>{
 
@@ -84,6 +86,10 @@ const Admin = () => {
                     <label>Address</label>
                     <input value={address} type="text" onChange={(e) => setAddress(e.target.value)} />
                 </div>
+                <div className='form-doses'>
+                    <label>Doses</label>
+                    <input value={doses} type="number" onChange={(e) => setDoses(e.target.value)} />
+                </div>
                 <button onClick={handleSubmit} >Add</button>
             </div>
         </Fade>
@@ -96,6 +102,7 @@ const Admin = () => {
                 <tr>
                     <th>Name</th>
                     <th>Address</th>
+                    <th>Doses</th>
                 </tr>
         
                 {dataDB.map((e,i) => (
@@ -103,6 +110,7 @@ const Admin = () => {
                         <tr key={i}>
                             <td>{e.name}</td>
                             <td>{e.address}</td>
+                            <td>{e.doses}</td>
                             <button onClick={()=> {deleteCenter(e._id)}}>Delete</button>
                         </tr>
                     

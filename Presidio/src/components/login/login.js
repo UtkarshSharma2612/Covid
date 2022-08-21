@@ -3,24 +3,23 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 function App() {
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const navigate = useNavigate();
+
   async function loginUser(event) {
+    event.preventDefault();
     const response = await axios.post("http://localhost:1337/api/login/", {
       email,
       password,
     });
 
-    const navigate = useNavigate();
-
     const data = response.data;
-
-    if (data.user) {
+    if (data.status === "ok") {
       // save jwt token and other user related data to local storage
       localStorage.setItem("token", JSON.stringify(data.user));
-
-      alert("Login successful");
       navigate("/");
     } else {
       alert("Please check your username and password");
@@ -48,7 +47,7 @@ function App() {
         <input type="submit" value="Login" />
       </form>
     </div>
-  );
+  )
 }
 
 export default App;
